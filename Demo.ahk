@@ -5,6 +5,7 @@ html := "
 <!DOCTYPE HTML>
 <html>
 	<head>
+		<span class="colored">Test <br>Content 1</span>
 		<title>Test title</title>
 		<meta charset="utf-8">
 	</head>
@@ -16,7 +17,7 @@ html := "
 				<span class="colored min">Test <br>Content 3</span>
 			</div>
 		</main>
-	</html>
+	</body>
 </html>
 )"
 
