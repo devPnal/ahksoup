@@ -23,7 +23,7 @@ class AhkSoup
 {
     dev := AhkSoup.Devlopment()
     html := ""
-    document := ""
+    document := []
 
     /* =========================
 	 * Open(_html)
@@ -39,7 +39,7 @@ class AhkSoup
     Open(_html)
     {
         this.html := _html
-        return this.document := this.dev.SortTags(this.dev.ExtractAllTags(_html), _html)
+        return this.document := this.dev.ExtractAllTags(_html)
     }
 
     /* =========================
@@ -154,7 +154,7 @@ class AhkSoup
 
         /* =========================
 		 * ExtractAllTags(_html)
-		 * Extract all tags by inner to outer, top to bottom.
+		 * Extract all tags by top to bottom.
 		 *
 		 * @Parameter
 		 * _html[String]: The HTML string to extract tags
@@ -178,7 +178,7 @@ class AhkSoup
                 {
                     tagStart := pos
                     tagEnd := InStr(_html, ">", true, pos) + 1
-                    if (tagEnd = 0)  ;If wrong HTML(If there isn't '>')
+                    if (tagEnd = 0)  ;If wrong HTML (If there isn't '>')
                         break
 
                     tag := SubStr(_html, tagStart, tagEnd - tagStart)
@@ -189,29 +189,26 @@ class AhkSoup
                         idPos := RegExMatch(tag, "id=[`"']([^`"']+)[`"']", &idOut)
                         classPos := RegExMatch(tag, "class=[`"']([^`"']+)[`"']", &classOut)
 
-                        tagInfo := {tag: tagName, id: idPos ? idOut[1] : "", class: classPos ? classOut[1] : "", content: ""}
+                        tagInfo := {tag: tagName, id: idPos ? idOut[1] : "", class: classPos ? classOut[1] : "", content: tag}
 
-                        ;If this tag is void element, insert it to result.
-                        if (this.HasValue(this.voidElements, tagName) || SubStr(tag, -2) = "/>")
-                        {
-                            tagInfo.content := tag
-                            tags.Push(tagInfo)
-                        }
-                        else ;Else, insert it to stack
+                        if (!this.HasValue(this.voidElements, tagName) && SubStr(tag, -2) != "/>")
                             stack.Push({name: tagName, start: tagStart, info: tagInfo})
+                        tags.Push(tagInfo)
                     }
-                    else ;Closing Tag. Stack item will pop.
+                    else ;Closing Tag. Update the corresponding opening tag's content.
                     {
                         closingTagName := RegExReplace(tag, "^</([^>]+)>$", "$1")
-                        while (stack.Length > 0)
+                        stackIndex := stack.Length
+                        while (stackIndex > 0)
                         {
-                            lastOpenTag := stack.Pop()
-                            if (lastOpenTag.name != closingTagName)
-                                continue
-                            tagContent := SubStr(_html, lastOpenTag.start, tagEnd - lastOpenTag.start)
-                            lastOpenTag.info.content := tagContent
-                            tags.Push(lastOpenTag.info)
-                            break
+                            if (stack[stackIndex].name = closingTagName)
+                            {
+                                fullContent := SubStr(_html, stack[stackIndex].start, tagEnd - stack[stackIndex].start)
+                                stack[stackIndex].info.content := fullContent
+                                stack.RemoveAt(stackIndex)
+                                break
+                            }
+                            stackIndex--
                         }
                     }
 
@@ -222,53 +219,6 @@ class AhkSoup
             }
 
             return tags ;{tag, id, class, content}
-        }
-
-        /* =========================
-		 * SortTags(_tags, _html)
-		 * Extract all tags by inner to outer, top to bottom.
-		 *
-		 * @Parameter
-         * _tags[String]: The array which has object literal by its elements. (The return value of ExtractAllTags())
-		 * _html[String]: The original HTML string to compare
-		 *
-		 * @Return value
-		 * sortedTags: The array which has object literal by its elements. [Sorted]
-         * [1]{tag, id, class, content}
-         * [2]{tag, id, class, content}
-         * ...
-		 * ==========================
-		 */
-        SortTags(_tags, _html)
-        {
-            sortedTags := []
-            tagPositions := Map()
-
-            ;Save each tag's start pos
-            for index, tag in _tags
-            {
-                startPos := InStr(_html, tag.content)
-                if (startPos > 0)
-                    tagPositions.Set(startPos, tag)
-            }
-
-            ;Sorting by start pos, Array to String
-            positions := []
-            for pos in tagPositions
-                positions.Push(pos)
-
-            posStr := ""
-            for pos in positions
-                posStr .= pos ","
-            posStr := SubStr(posStr, 1, -1)
-            Sort(posStr, "N D,")
-
-            ;String to Array
-            sortedPositions := StrSplit(posStr, ",")
-            for pos in sortedPositions
-                sortedTags.Push(tagPositions[pos + 0]) ;To convert pos to int
-
-            return sortedTags
         }
 
         /* =========================
