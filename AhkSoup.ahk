@@ -4,7 +4,7 @@ You should have received a copy of the MIT License along with this library.
 */
 
 /* #############################################################
- * AhkSoup v1.0
+ * AhkSoup v1.0.1
  *
  * Author: 프날(Pnal) - https://pnal.dev (contact@pnal.dev)
  * Project URL: - https://github.com/devPnal/ahksoup
@@ -51,8 +51,8 @@ class AhkSoup
 	 *
 	 * @Return value
 	 * result: Array for <_tagname> tags.
-     * [1]{outerHTML, innerHTML, Text}
-     * [2]{outerHTML, innerHTML, Text}
+     * [1]{tag, id, class, outerHTML, innerHTML, text}
+     * [2]{tag, id, class, outerHTML, innerHTML, text}
      * ...
 	 * ==========================
 	 */
@@ -84,8 +84,8 @@ class AhkSoup
 	 *
 	 * @Return value
 	 * result: Array for <tagname id='_id'> tags.
-     * [1]{outerHTML, innerHTML, Text}
-     * [2]{outerHTML, innerHTML, Text}
+     * [1]{tag, id, class, outerHTML, innerHTML, text}
+     * [2]{tag, id, class, outerHTML, innerHTML, text}
      * ...
 	 * ==========================
 	 */
@@ -120,8 +120,8 @@ class AhkSoup
 	 *
 	 * @Return value
 	 * result: Array for <tagname class='_className'> tags.
-     * [1]{outerHTML, innerHTML, Text}
-     * [2]{outerHTML, innerHTML, Text}
+     * [1]{tag, id, class, outerHTML, innerHTML, text}
+     * [2]{tag, id, class, outerHTML, innerHTML, text}
      * ...
 	 * ==========================
 	 */
@@ -158,7 +158,7 @@ class AhkSoup
 	 *
 	 * @Return value
 	 * result: A key-value object.
-     * {outerHTML, innerHTML, Text}
+     * {tag, id, class, outerHTML, innerHTML, text}
 	 * ==========================
 	 */
     GetElementByTagName(_name) => this.GetElementsByTagName(_name)[1]
@@ -299,8 +299,21 @@ class AhkSoup
             return false
         }
 
+        /* =========================
+		 * GetTag(_outerHTML)
+         * GetId(_outerHTML)
+         * GetClass(_outerHTML)
+         * Find the [tag name | id | class name] of _outerHTML
+         *
+         * @Parameter
+         * _outerHTML[String]: The HTML string to find [Tag | Id | Class]
+         *
+         * @Return value
+         * - string: tag name
+         * - array: class, id (for example, <div class="abc def"> returns ['abc', 'def'])
+         */
         GetTag(_outerHTML) => RegExReplace(_outerHTML, "s)<(\w*)(?:\s+[^>]*)?>.*", "$1")
-        GetId(_outerHTML) => RegExReplace(_outerHTML, "s)<.*?id=['`"](.*?)['`"].*", "$1")
+        GetId(_outerHTML) => StrSplit(RegExReplace(_outerHTML, "s)<.*?id=['`"](.*?)['`"].*", "$1"), " ")
         GetClass(_outerHTML) => StrSplit(RegExReplace(_outerHTML, "s)<.*?class=['`"](.*?)['`"].*", "$1"), " ")
     }
 
