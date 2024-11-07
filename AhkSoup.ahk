@@ -63,7 +63,14 @@ class AhkSoup
         {
             if (element.tag != _tagName)
                 continue
-            result.Push({outerHTML: element.content, innerHTML: this.dev.TrimOuterTag(element.content), Text: this.dev.TrimAllTag(element.content)})
+            result.Push({
+                tag: this.dev.GetTag(element.content),
+                id: this.dev.GetId(element.content),
+                class: this.dev.GetClass(element.content),
+                outerHTML: element.content,
+                innerHTML: this.dev.TrimOuterTag(element.content),
+                Text: this.dev.TrimAllTag(element.content)
+            })
         }
         return result
     }
@@ -91,7 +98,14 @@ class AhkSoup
             {
                 if (StrSplit(element.id, " ")[A_Index] != _id && element.id != _id)
                     continue
-                result.Push({outerHTML: element.content, innerHTML: this.dev.TrimOuterTag(element.content), Text: this.dev.TrimAllTag(element.content)})
+                result.Push({
+                    tag: this.dev.GetTag(element.content),
+                    id: this.dev.GetId(element.content),
+                    class: this.dev.GetClass(element.content),
+                    outerHTML: element.content,
+                    innerHTML: this.dev.TrimOuterTag(element.content),
+                    Text: this.dev.TrimAllTag(element.content)
+                })
             }
         }
         return result
@@ -120,7 +134,14 @@ class AhkSoup
             {
                 if (StrSplit(element.class, " ")[A_Index] != _className && element.class != _className)
                     continue
-                result.Push({outerHTML: element.content, innerHTML: this.dev.TrimOuterTag(element.content), Text: this.dev.TrimAllTag(element.content)})
+                result.Push({
+                    tag: this.dev.GetTag(element.content),
+                    id: this.dev.GetId(element.content),
+                    class: this.dev.GetClass(element.content),
+                    outerHTML: element.content,
+                    innerHTML: this.dev.TrimOuterTag(element.content),
+                    Text: this.dev.TrimAllTag(element.content)
+                })
             }
         }
         return result
@@ -277,6 +298,10 @@ class AhkSoup
             }
             return false
         }
+
+        GetTag(_outerHTML) => RegExReplace(_outerHTML, "s)<(\w*)(?:\s+[^>]*)?>.*", "$1")
+        GetId(_outerHTML) => RegExReplace(_outerHTML, "s)<.*?id=['`"](.*?)['`"].*", "$1")
+        GetClass(_outerHTML) => StrSplit(RegExReplace(_outerHTML, "s)<.*?class=['`"](.*?)['`"].*", "$1"), " ")
     }
 
 }
