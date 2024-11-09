@@ -34,6 +34,10 @@ Please refer to the example file.
 * GetElementById()
 * GetElementsByClassName()
 * GetElementByClassName()
+* *QuerySelectorAll()
+* *QuerySelector()
+
+\*: Experiment
 
 ## Support and contributions
 * If you have any problems during use, please register a GitHub issue or email to contact [at] pnal.dev
