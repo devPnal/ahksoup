@@ -21,9 +21,14 @@ You should have received a copy of the MIT License along with this library.
 
 class AhkSoup
 {
-    dev := AhkSoup.Development()
     html := ""
     document := []
+    dev := {}
+
+    __New()
+    {
+        this.dev := AhkSoup.Development()
+    }
 
     /* =========================
 	 * Open(_html)
@@ -237,7 +242,7 @@ class AhkSoup
      * {tag, id, class, outerHTML, innerHTML, text}
 	 * ==========================
 	 */
-    QuerySelector(_query) => QuerySelectorAll(_query)[1]
+    QuerySelector(_query) => this.QuerySelectorAll(_query)[1]
 
     /* =========================
 	 * [For development]
@@ -412,7 +417,8 @@ class AhkSoup
          * ...
          * ==========================
          */
-        QueryInternal(elements, selectors) {
+        QueryInternal(elements, selectors)
+        {
             if (selectors.Length = 0)
                 return elements
 
@@ -420,13 +426,15 @@ class AhkSoup
             filtered := []
             seenElements := []
 
-            for _, parent in elements {
+            for index, parent in elements
+            {
                 if (!IsObject(parent.content))
                     continue
 
                 siblings := parent.content
 
-                if (currentSelector.relationship = "child") {
+                if (currentSelector.relationship = "child")
+                {
                     processDirectChildren(siblings, currentSelector.selector)
                     continue
                 }
@@ -436,32 +444,34 @@ class AhkSoup
 
             return this.queryInternal(filtered, selectors)
 
-            processDirectChildren(siblings, selector) {
-                for _, child in siblings {
-                    if (this.match(child, selector, siblings, seenElements))
+            processDirectChildren(siblings, selector)
+            {
+                for index, child in siblings
+                {
+                    if (this.IsMatch(child, selector, siblings, seenElements))
                         filtered.Push(child)
                 }
             }
 
-            processDescendants(parent, siblings, selector) {
+            processDescendants(parent, siblings, selector)
+            {
                 ; Process parent element
-                if (this.match(parent, selector, siblings, seenElements))
+                if (this.IsMatch(parent, selector, siblings, seenElements))
                     filtered.Push(parent)
 
                 ; Process children and their descendants
-                for _, child in siblings {
-                    if (this.match(child, selector, siblings, seenElements))
+                for index, child in siblings
+                {
+                    if (this.IsMatch(child, selector, siblings, seenElements))
                         filtered.Push(child)
 
                     if (!child.content || !IsObject(child.content))
                         continue
 
-                    childMatches := this.queryInternal([child], [{
-                        selector: selector,
-                        relationship: "descendant"
-                    }])
+                    childMatches := this.queryInternal([child], [{selector: selector, relationship: "descendant"}])
 
-                    for _, match in childMatches {
+                    for index, match in childMatches
+                    {
                         if (this.hasValue(seenElements, match))
                             continue
 
@@ -473,7 +483,7 @@ class AhkSoup
         }
 
         /* =========================
-         * Match(element, selector, siblings, seenElements)
+         * IsMatch(element, selector, siblings, seenElements)
          * Check if an element matches the given selector with nth-child support.
          *
          * @Parameter
@@ -487,28 +497,34 @@ class AhkSoup
          * false: If the element doesn't match
          * ==========================
          */
-        Match(element, selector, siblings, seenElements) {
+        IsMatch(element, selector, siblings, seenElements)
+        {
             if (this.hasValue(seenElements, element))
                 return false
 
-            if (InStr(selector, ":nth-child")) {
+            if (InStr(selector, ":nth-child"))
+            {
                 parts := StrSplit(selector, ":nth-child")
                 baseSelector := parts[1]
 
-                if (RegExMatch(parts[2], "^\((\d+)\)$", &match)) {
+                if (RegExMatch(parts[2], "^\((\d+)\)$", &match))
+                {
                     if (!IsObject(siblings) || siblings.Length = 0)
                         return false
 
-                    n := Integer(match[1])
+                    n := match[1]
                     childIndex := 0
 
-                    for _, sibling in siblings {
+                    for index, sibling in siblings
+                    {
                         childIndex++
-                        if (sibling = element) {
+                        if (sibling = element)
+                        {
                             if (childIndex != n)
                                 return false
 
-                            if (this.matchSelector(element, baseSelector)) {
+                            if (this.matchSelector(element, baseSelector))
+                            {
                                 seenElements.Push(element)
                                 return true
                             }
@@ -519,7 +535,8 @@ class AhkSoup
                 }
             }
 
-            if (this.matchSelector(element, selector)) {
+            if (this.matchSelector(element, selector))
+            {
                 seenElements.Push(element)
                 return true
             }
@@ -539,11 +556,13 @@ class AhkSoup
          * false: If the element doesn't match
          * ==========================
          */
-        MatchSelector(element, selector) {
+        MatchSelector(element, selector)
+        {
             if (selector = "")
                 return true
 
-            if (RegExMatch(selector, "^(\w+)([#.].+)$", &match)) {
+            if (RegExMatch(selector, "^(\w+)([#.].+)$", &match))
+            {
                 tagSelector := match[1]
                 attributeSelector := match[2]
 
