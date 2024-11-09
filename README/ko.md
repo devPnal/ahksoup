@@ -34,7 +34,11 @@ document.Open(htmlstring)
 * GetElementById()
 * GetElementsByClassName()
 * GetElementByClassName()
+* *QuerySelectorAll()
+* *QuerySelector()
 
+\*: 실험 기능
+  
 ## 지원 및 기여
 * 사용 중 문제가 있을 경우 GitHub 이슈 등록을 하거나, 이메일 contact@pnal.dev로 연락 주세요.
 * GitHub 기여는 언제든지 환영입니다. 추가 및 보완하고 싶은 기능을 자유롭게 기여해주세요.
