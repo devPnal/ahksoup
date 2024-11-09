@@ -4,7 +4,7 @@ You should have received a copy of the MIT License along with this library.
 */
 
 /* #############################################################
- * AhkSoup v1.0.1
+ * AhkSoup v1.1
  *
  * Author: 프날(Pnal) - https://pnal.dev (contact@pnal.dev)
  * Project URL: - https://github.com/devPnal/ahksoup
@@ -21,7 +21,7 @@ You should have received a copy of the MIT License along with this library.
 
 class AhkSoup
 {
-    dev := AhkSoup.Devlopment()
+    dev := AhkSoup.Development()
     html := ""
     document := []
 
@@ -64,12 +64,12 @@ class AhkSoup
             if (element.tag != _tagName)
                 continue
             result.Push({
-                tag: this.dev.GetTag(element.content),
-                id: this.dev.GetId(element.content),
-                class: this.dev.GetClass(element.content),
-                outerHTML: element.content,
-                innerHTML: this.dev.TrimOuterTag(element.content),
-                Text: this.dev.TrimAllTag(element.content)
+                tag: element.tag,
+                id: element.id,
+                class: element.class,
+                outerHTML: element.outerHTML,
+                innerHTML: this.dev.TrimOuterTag(element.outerHTML),
+                Text: this.dev.TrimAllTag(element.outerHTML)
             })
         }
         return result
@@ -94,17 +94,17 @@ class AhkSoup
         result := []
         for index, element in this.document
         {
-            Loop StrSplit(element.id, " ").Length
+            Loop element.id.Length
             {
-                if (StrSplit(element.id, " ")[A_Index] != _id && element.id != _id)
+                if (element.id[A_Index] != _id && element.id != _id)
                     continue
                 result.Push({
-                    tag: this.dev.GetTag(element.content),
-                    id: this.dev.GetId(element.content),
-                    class: this.dev.GetClass(element.content),
-                    outerHTML: element.content,
-                    innerHTML: this.dev.TrimOuterTag(element.content),
-                    Text: this.dev.TrimAllTag(element.content)
+                    tag: element.tag,
+                    id: element.id,
+                    class: element.class,
+                    outerHTML: element.outerHTML,
+                    innerHTML: this.dev.TrimOuterTag(element.outerHTML),
+                    Text: this.dev.TrimAllTag(element.outerHTML)
                 })
             }
         }
@@ -130,17 +130,17 @@ class AhkSoup
         result := []
         for index, element in this.document
         {
-            Loop StrSplit(element.class, " ").Length
+            Loop element.class.Length
             {
-                if (StrSplit(element.class, " ")[A_Index] != _className && element.class != _className)
+                if (element.class[A_Index] != _className && element.class != _className)
                     continue
                 result.Push({
-                    tag: this.dev.GetTag(element.content),
-                    id: this.dev.GetId(element.content),
-                    class: this.dev.GetClass(element.content),
-                    outerHTML: element.content,
-                    innerHTML: this.dev.TrimOuterTag(element.content),
-                    Text: this.dev.TrimAllTag(element.content)
+                    tag: element.tag,
+                    id: element.id,
+                    class: element.class,
+                    outerHTML: element.outerHTML,
+                    innerHTML: this.dev.TrimOuterTag(element.outerHTML),
+                    Text: this.dev.TrimAllTag(element.outerHTML)
                 })
             }
         }
@@ -166,10 +166,84 @@ class AhkSoup
     GetElementByClassName(_name) => this.GetElementsByClassName(_name)[1]
 
     /* =========================
+	 * QuerySelectorAll(_query)
+	 * Find elements by query (NOT SUPPORT [+] SELECTOR & :nth-child without nth-child(n))
+	 *
+	 * @Parameter
+	 * _query[String]: qeury to find elements. For example, "main #content .warn"
+	 *
+	 * @Return value
+	 * result: Tags for matching with query.
+     * [1]{tag, id, class, outerHTML, innerHTML, text}
+     * [2]{tag, id, class, outerHTML, innerHTML, text}
+     * ...
+	 * ==========================
+	 */
+    QuerySelectorAll(_query) {
+        query := RegExReplace(_query, "\s*>\s*", ">")
+        query := RegExReplace(query, "\s+", " ")
+
+        selectors := []
+        parts := StrSplit(query, " ")
+
+        for index, part in parts
+        {
+            if (InStr(part, ">"))
+            {
+                childParts := StrSplit(part, ">")
+                for index, childPart in childParts
+                {
+                    if (childPart != "")
+                    {
+                        selectors.Push({
+                            selector: childPart,
+                            relationship: index < childParts.Length ? "child" : "descendant"
+                        })
+                    }
+                }
+            }
+            else
+            {
+                selectors.Push({
+                    selector: part,
+                    relationship: "descendant"
+                })
+            }
+        }
+        result := []
+        for element in this.dev.QueryInternal(this.document, selectors)
+        {
+            result.Push({
+                tag: element.tag,
+                id: element.id,
+                class: element.class,
+                outerHTML: element.outerHTML,
+                innerHTML: this.dev.TrimOuterTag(element.outerHTML),
+                Text: this.dev.TrimAllTag(element.outerHTML)
+            })
+        }
+
+        return result
+    }
+    /* =========================
+	 * QuerySelectorAll(_query)
+	 * Find a first single element by query (NOT SUPPORT [+] SELECTOR & :nth-child without nth-child(n))
+	 *
+	 * @Parameter
+	 * _query[String]: qeury to find a first single element. For example, "main #content .warn"
+	 *
+	 * @Return value
+	 * result: A first single tag for matching with query.
+     * {tag, id, class, outerHTML, innerHTML, text}
+	 * ==========================
+	 */
+    QuerySelector(_query) => QuerySelectorAll(_query)[1]
+
+    /* =========================
 	 * [For development]
 	 * Functions below this are used for other functions in this library and may be meaningless in actual use.
 	 */
-    class Devlopment
+    class Development
     {
         voidElements := ["area", "base", "br", "col", "embed", "hr", "img", "input", "link", "meta", "param", "source", "track", "wbr"]
 
@@ -199,24 +273,28 @@ class AhkSoup
                 {
                     tagStart := pos
                     tagEnd := InStr(_html, ">", true, pos) + 1
-                    if (tagEnd = 0)  ;If wrong HTML (If there isn't '>')
+                    if (tagEnd = 0)  ; If wrong HTML (If there isn't '>')
                         break
 
                     tag := SubStr(_html, tagStart, tagEnd - tagStart)
 
-                    if (SubStr(tag, 2, 1) != "/") ;Opening tag
+                    if (SubStr(tag, 2, 1) != "/") ; Opening tag
                     {
                         tagName := RegExReplace(tag, "^<([^\s>]+).*$", "$1")
                         idPos := RegExMatch(tag, "id=[`"']([^`"']+)[`"']", &idOut)
                         classPos := RegExMatch(tag, "class=[`"']([^`"']+)[`"']", &classOut)
 
-                        tagInfo := {tag: tagName, id: idPos ? idOut[1] : "", class: classPos ? classOut[1] : "", content: tag}
+                        tagInfo := {tag: tagName, id: idPos ? StrSplit(idOut[1], " ") : [""], class: classPos ? StrSplit(classOut[1], " ") : [""], content: [], outerHTML: tag}
 
                         if (!this.HasValue(this.voidElements, tagName) && SubStr(tag, -2) != "/>")
                             stack.Push({name: tagName, start: tagStart, info: tagInfo})
-                        tags.Push(tagInfo)
+
+                        if (stack.Length > 0 && stack[stack.Length].info != tagInfo)
+                            stack[stack.Length].info.content.Push(tagInfo)
+                        else
+                            tags.Push(tagInfo)
                     }
-                    else ;Closing Tag. Update the corresponding opening tag's content.
+                    else ; Closing Tag. Update the corresponding opening tag's content.
                     {
                         closingTagName := RegExReplace(tag, "^</([^>]+)>$", "$1")
                         stackIndex := stack.Length
@@ -225,7 +303,9 @@ class AhkSoup
                             if (stack[stackIndex].name = closingTagName)
                             {
                                 fullContent := SubStr(_html, stack[stackIndex].start, tagEnd - stack[stackIndex].start)
-                                stack[stackIndex].info.content := fullContent
+                                stack[stackIndex].info.outerHTML := fullContent
+                                if (stackIndex > 1)
+                                    stack[stackIndex - 1].info.content.Push(stack[stackIndex].info)
                                 stack.RemoveAt(stackIndex)
                                 break
                             }
@@ -239,8 +319,9 @@ class AhkSoup
                     pos++
             }
 
-            return tags ;{tag, id, class, content}
+            return tags ; {tag, id, class, content, outerHTML}
         }
+
 
         /* =========================
 		 * TrimOuterTag(_html)
@@ -255,8 +336,7 @@ class AhkSoup
 		 */
         TrimOuterTag(_html)
         {
-            RegExMatch(_html, "s)<(.*?) ?.*?>(.*)</\1>", &output)
-            return output ? output[2] : ""
+            return RegExReplace(_html, "^(<[^>]+>)(.*)(</[^>]+>)$", "$2")
         }
 
         /* =========================
@@ -315,6 +395,174 @@ class AhkSoup
         GetTag(_outerHTML) => RegExReplace(_outerHTML, "s)<(\w*)(?:\s+[^>]*)?>.*", "$1")
         GetId(_outerHTML) => StrSplit(RegExReplace(_outerHTML, "s)<.*?id=['`"](.*?)['`"].*", "$1"), " ")
         GetClass(_outerHTML) => StrSplit(RegExReplace(_outerHTML, "s)<.*?class=['`"](.*?)['`"].*", "$1"), " ")
+
+
+        /* =========================
+         * QueryInternal(elements, selectors)
+         * Process selectors and find matching elements recursively.
+         *
+         * @Parameter
+         * elements[Array]: The array of elements to search in
+         * selectors[Array]: Array of selector objects {selector, relationship}
+         *
+         * @Return value
+         * filtered: Array of elements that match all selectors.
+         * [1]{tag, id, class, content, outerHTML}
+         * [2]{tag, id, class, content, outerHTML}
+         * ...
+         * ==========================
+         */
+        QueryInternal(elements, selectors) {
+            if (selectors.Length = 0)
+                return elements
+
+            currentSelector := selectors.RemoveAt(1)
+            filtered := []
+            seenElements := []
+
+            for _, parent in elements {
+                if (!IsObject(parent.content))
+                    continue
+
+                siblings := parent.content
+
+                if (currentSelector.relationship = "child") {
+                    processDirectChildren(siblings, currentSelector.selector)
+                    continue
+                }
+
+                processDescendants(parent, siblings, currentSelector.selector)
+            }
+
+            return this.queryInternal(filtered, selectors)
+
+            processDirectChildren(siblings, selector) {
+                for _, child in siblings {
+                    if (this.match(child, selector, siblings, seenElements))
+                        filtered.Push(child)
+                }
+            }
+
+            processDescendants(parent, siblings, selector) {
+                ; Process parent element
+                if (this.match(parent, selector, siblings, seenElements))
+                    filtered.Push(parent)
+
+                ; Process children and their descendants
+                for _, child in siblings {
+                    if (this.match(child, selector, siblings, seenElements))
+                        filtered.Push(child)
+
+                    if (!child.content || !IsObject(child.content))
+                        continue
+
+                    childMatches := this.queryInternal([child], [{
+                        selector: selector,
+                        relationship: "descendant"
+                    }])
+
+                    for _, match in childMatches {
+                        if (this.hasValue(seenElements, match))
+                            continue
+
+                        filtered.Push(match)
+                        seenElements.Push(match)
+                    }
+                }
+            }
+        }
+
+        /* =========================
+         * Match(element, selector, siblings, seenElements)
+         * Check if an element matches the given selector with nth-child support.
+         *
+         * @Parameter
+         * element[Object]: The element to check
+         * selector[String]: The selector to match against
+         * siblings[Array]: Array of sibling elements for nth-child calculation
+         * seenElements[Array]: Array of already processed elements to avoid duplicates
+         *
+         * @Return value
+         * true: If the element matches the selector
+         * false: If the element doesn't match
+         * ==========================
+         */
+        Match(element, selector, siblings, seenElements) {
+            if (this.hasValue(seenElements, element))
+                return false
+
+            if (InStr(selector, ":nth-child")) {
+                parts := StrSplit(selector, ":nth-child")
+                baseSelector := parts[1]
+
+                if (RegExMatch(parts[2], "^\((\d+)\)$", &match)) {
+                    if (!IsObject(siblings) || siblings.Length = 0)
+                        return false
+
+                    n := Integer(match[1])
+                    childIndex := 0
+
+                    for _, sibling in siblings {
+                        childIndex++
+                        if (sibling = element) {
+                            if (childIndex != n)
+                                return false
+
+                            if (this.matchSelector(element, baseSelector)) {
+                                seenElements.Push(element)
+                                return true
+                            }
+                            return false
+                        }
+                    }
+                    return false
+                }
+            }
+
+            if (this.matchSelector(element, selector)) {
+                seenElements.Push(element)
+                return true
+            }
+            return false
+        }
+
+        /* =========================
+         * MatchSelector(element, selector)
+         * Check if an element matches a basic selector (tag, class, id).
+         *
+         * @Parameter
+         * element[Object]: The element to check
+         * selector[String]: The selector to match against (tag, #id, or .class)
+         *
+         * @Return value
+         * true: If the element matches the selector
+         * false: If the element doesn't match
+         * ==========================
+         */
+        MatchSelector(element, selector) {
+            if (selector = "")
+                return true
+
+            if (RegExMatch(selector, "^(\w+)([#.].+)$", &match)) {
+                tagSelector := match[1]
+                attributeSelector := match[2]
+
+                if (element.tag != tagSelector)
+                    return false
+
+                if (SubStr(attributeSelector, 1, 1) = "#")
+                    return this.hasValue(element.id, SubStr(attributeSelector, 2))
+                else if (SubStr(attributeSelector, 1, 1) = ".")
+                    return this.hasValue(element.class, SubStr(attributeSelector, 2))
+            }
+
+            if (SubStr(selector, 1, 1) = "#")
+                return this.hasValue(element.id, SubStr(selector, 2))
+            else if (SubStr(selector, 1, 1) = ".")
+                return this.hasValue(element.class, SubStr(selector, 2))
+            else
+                return element.tag = selector
+        }
     }
 
 }

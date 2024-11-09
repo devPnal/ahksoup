@@ -1,18 +1,18 @@
 ﻿#include AhkSoup.ahk
+#Requires AutoHotkey v2.0
 
 html := "
 (
 <!DOCTYPE HTML>
 <html>
 	<head>
-		<span class="colored">Test <br>Content 1</span>
 		<title>Test title</title>
 		<meta charset="utf-8">
 	</head>
 	<body>
 		<main>
 			<div id="content">
-				<span class="colored">Test <br>Content 1</span>
+				<span class="colored" id="article">Test <br>Content 1</span>
 				<span class="colored">Test <br>Content 2</span>
 				<span class="colored min">Test <br>Content 3</span>
 			</div>
@@ -21,15 +21,23 @@ html := "
 </html>
 )"
 
-document := AhkSoup() ;Create Instance
-document.Open(html) ;Open HTML String
+document := AhkSoup()
+document.Open(html)
 
-MsgBox(document.GetElementsByTagName("title")[1].OuterHTML)
-MsgBox(document.GetElementByTagName("title").Text)
+;All methods return {tag, [id], [class], outerHTML, innerHTML, text} ([] = array)
+MsgBox("1: GetElement(s)ByTagName")
+MsgBox(document.GetElementsByTagName("title")[1].outerHTML)
+MsgBox(document.GetElementByTagName("title").text)
 
-MsgBox(document.GetElementsById("content")[1].InnerHTML)
-MsgBox(document.GetElementById("content").Text)
+MsgBox("2: GetElement(s)ById")
+MsgBox(document.GetElementsById("content")[1].innerHTML)
+MsgBox(document.GetElementById("content").text)
 
-MsgBox(document.GetElementsByClassName("colored")[2].OuterHTML)
-MsgBox(document.GetElementsByClassName("min")[1].InnerHTML)
-MsgBox(document.GetElementByClassName("colored").Text)
+MsgBox("3: GetElement(s)ByClassName")
+MsgBox(document.GetElementsByClassName("colored")[1].id[1])
+MsgBox(document.GetElementsByClassName("colored")[3].class[2]) ;class[1] = colored, class[2] = min
+MsgBox(document.GetElementByClassName("colored").tag)
+
+MsgBox("4: QuerySelector(All)")
+MsgBox(document.QuerySelectorAll("main #content .colored")[3].text)
+MsgBox(document.QuerySelector("main #content .min").text)
